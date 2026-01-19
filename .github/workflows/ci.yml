@@ -2,15 +2,12 @@ name: CI
 
 on:
   push:
-    branches:
-      - main
+    branches: [ "main" ]
   pull_request:
-    branches:
-      - main
+    branches: [ "main" ]
 
 jobs:
-  build:
-    name: Build and Test
+  build-test-and-docker:
     runs-on: ubuntu-latest
 
     steps:
@@ -21,8 +18,20 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: "17"
           cache: maven
 
-      - name: Build with Maven Wrapper
-        run: ./mvnw clean verify
+      # Make Maven Wrapper executable on Linux runner (important)
+      - name: Make mvnw executable
+        run: chmod +x mvnw
+
+      - name: Build and test with Maven Wrapper
+        run: ./mvnw -B clean verify
+
+      # Build Docker image (no push yet)
+      - name: Build Docker image
+        run: |
+          docker build \
+            -t recommendation-service:${{ github.sha }} \
+            -t recommendation-service:ci \
+            .
